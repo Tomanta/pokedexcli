@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/tomanta/pokedexcli/internal/pokeAPI"
 )
 
 func commandMap(cfg *config) error {
-	fmt.Println("TO BE IMPLEMENTED")
+	res := pokeAPI.CallAPI()
+	fmt.Println(res)
 
 	return nil
 }
