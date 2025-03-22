@@ -6,8 +6,14 @@ import (
 )
 
 func commandMap(cfg *config) error {
-	res := pokeAPI.CallAPI()
-	fmt.Println(res)
+	res, err := pokeAPI.GetLocationAreas(cfg.next)
+	if err != nil {
+		return err
+	}
+
+	for i := range res {
+		fmt.Println(res[i])
+	}
 
 	return nil
 }
