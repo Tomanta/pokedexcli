@@ -5,17 +5,20 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/tomanta/pokedexcli/internal/pokeAPI"
 )
 
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(cfg *config) error
+	callback    func(*config) error
 }
 
 type config struct {
-	next     string
-	previous string
+	pokeapiClient        pokeAPI.Client
+	nextLocationsURL     *string
+	previousLocationsURL *string
 }
 
 func getCommands() map[string]cliCommand {
@@ -44,12 +47,10 @@ func getCommands() map[string]cliCommand {
 	}
 }
 
-func startRepl() {
+func startRepl(cfg *config) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	command_map := getCommands()
-
-	cfg := config{next: "", previous: ""}
 
 	for {
 		fmt.Print("Pokedex > ")
@@ -63,7 +64,7 @@ func startRepl() {
 
 		cmd, exists := command_map[words[0]]
 		if exists {
-			err := cmd.callback(&cfg)
+			err := cmd.callback(cfg)
 			if err != nil {
 				fmt.Println(err)
 			}

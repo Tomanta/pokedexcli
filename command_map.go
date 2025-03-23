@@ -1,25 +1,40 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"github.com/tomanta/pokedexcli/internal/pokeAPI"
 )
 
 func commandMap(cfg *config) error {
-	res, err := pokeAPI.GetLocationAreas(cfg.next)
+	locationsResp, err := cfg.pokeapiClient.ListLocations(cfg.nextLocationsURL)
 	if err != nil {
 		return err
 	}
 
-	for i := range res {
-		fmt.Println(res[i])
-	}
+	cfg.nextLocationsURL = locationsResp.Next
+	cfg.previousLocationsURL = locationsResp.Previous
 
+	for _, location := range locationsResp.LocationAreas {
+		fmt.Println(location.Name)
+	}
 	return nil
 }
 
 func commandMapb(cfg *config) error {
-	fmt.Println("TO BE IMPLEMENTED")
+	if cfg.previousLocationsURL == nil {
+		return errors.New("you are on the first page")
+	}
 
+	locationsResp, err := cfg.pokeapiClient.ListLocations(cfg.previousLocationsURL)
+	if err != nil {
+		return err
+	}
+
+	cfg.nextLocationsURL = locationsResp.Next
+	cfg.previousLocationsURL = locationsResp.Previous
+
+	for _, location := range locationsResp.LocationAreas {
+		fmt.Println(location.Name)
+	}
 	return nil
 }
