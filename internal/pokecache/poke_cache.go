@@ -15,7 +15,7 @@ type cacheEntry struct {
 	val []byte
 }
 
-func (c Cache) Add(key string, value []byte) {
+func (c *Cache) Add(key string, value []byte) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -27,7 +27,10 @@ func (c Cache) Add(key string, value []byte) {
 	c.cache[key] = cache_entry
 }
 
-func (c Cache) Get(key string) ([]byte, bool) {
+func (c *Cache) Get(key string) ([]byte, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	
 	value, exists := c.cache[key]
 	if exists {
 		return value.val, true
@@ -35,14 +38,32 @@ func (c Cache) Get(key string) ([]byte, bool) {
 	return []byte{}, false
 }
 
-func (c Cache) readLoop(interval time.Duration) {
-	return
+func (c *Cache) readLoop(interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	go func() {
+		for {
+			<-ticker.C
+			c.mu.Lock()
+
+			now := time.Now()
+
+			for k, v := range c.cache {
+				if now.Sub(v.createdAt) > interval {
+					delete(c.cache, k)
+				}
+			}
+
+			c.mu.Unlock()
+		}
+	}()
 }
 
-func NewCache(interval time.Duration) Cache {
+func NewCache(interval time.Duration) *Cache {
 	// TODO: Kick off readLoop to remove old entries
-	cache := Cache{
+	cache := &Cache{
 		cache: make(map[string]cacheEntry),
 	}
+
+	cache.readLoop(interval)
 	return cache
 }
