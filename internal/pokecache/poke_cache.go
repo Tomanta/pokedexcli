@@ -6,7 +6,7 @@ import (
 )
 
 type Cache struct {
-	mu sync.Mutex
+	mu *sync.Mutex
 	cache map[string]cacheEntry
 }
 
@@ -40,30 +40,29 @@ func (c *Cache) Get(key string) ([]byte, bool) {
 
 func (c *Cache) readLoop(interval time.Duration) {
 	ticker := time.NewTicker(interval)
-	go func() {
-		for {
-			<-ticker.C
-			c.mu.Lock()
-
-			now := time.Now()
-
-			for k, v := range c.cache {
-				if now.Sub(v.createdAt) > interval {
-					delete(c.cache, k)
-				}
-			}
-
-			c.mu.Unlock()
-		}
-	}()
+	for range ticker.C {
+		c.reap(time.Now(), interval)
+	}
 }
 
-func NewCache(interval time.Duration) *Cache {
+func (c *Cache) reap(now time.Time, last time.Duration) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for key, val := range c.cache {
+		if val.createdAt.Before(now.Add(-last)) {
+			delete(c.cache, key)
+		}
+	}
+}
+
+func NewCache(interval time.Duration) Cache {
 	// TODO: Kick off readLoop to remove old entries
-	cache := &Cache{
+	cache := Cache{
+		mu: &sync.Mutex{},
 		cache: make(map[string]cacheEntry),
+		
 	}
 
-	cache.readLoop(interval)
+	go cache.readLoop(interval)
 	return cache
 }
