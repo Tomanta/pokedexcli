@@ -6,8 +6,8 @@ import (
 )
 
 func commandCatch(cfg *config, args ...string) error {
-	fmt.Println("NOT YET COMPLETED")
 	if len(args) != 1 {
+		// NOTE: BootDev code returns an error here wth a similar message
 		fmt.Println("Which pokemon do you want to catch?")
 		return nil
 	}
@@ -21,15 +21,17 @@ func commandCatch(cfg *config, args ...string) error {
 
 	pokemon := args[0]
 	fmt.Printf("Throwing a Pokeball at %s...\n", pokemon)
-
-	// TODO: Fetch Pokemon data from API
-	chance := 0.9 - (float64(pokemonDetailsResp.BaseExperience) / 1000) // TODO: Modify chance based on Pokemon's base experience
-	fmt.Printf("%.02f chance to catch...", chance)
+	chance := 0.9 - (float64(pokemonDetailsResp.BaseExperience) / 1000)
 	if rand.Float64() > chance {
 		fmt.Printf("%s escaped!\n", pokemon)
 	} else {
 		fmt.Printf("%s was caught!\n", pokemon)
-		// TODO: Add to pokedex
+
+		_, exists := cfg.pokedex[pokemon]
+		if !exists {
+			cfg.pokedex[pokemon] = pokemonDetailsResp
+		}
+
 	}
 	return nil
 }
